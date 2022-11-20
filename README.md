@@ -1,8 +1,20 @@
-参考 URL
+# OpenAPI （Swagger）
 
-SPDX：https://spdx.org/licenses/
+## Reference
 
-データ型
+-   OpenAPI Specification：https://github.com/OAI/OpenAPI-Specification
+-   SPDX：https://spdx.org/licenses/
+
+## Swagger Editor
+
+```
+docker pull swaggerapi/swagger-editor
+docker run -d -p 80:8080 swaggerapi/swagger-editor
+```
+
+# MEMO
+
+### Data Type
 
 ```yml
 components:
