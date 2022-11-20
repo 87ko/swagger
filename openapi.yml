@@ -1,0 +1,174 @@
+# 必須：どのopenapi Specバージョンを使用するか
+openapi: "3.0.3"
+# 必須：APIのメタデータを定義
+info:
+    title: Sample API
+    # Markdownで記述可能
+    description: |
+        # Feature
+        - Get users.
+        - Create user.
+    # 仕様書自体のversion
+    version: 1.0.0
+    # サービス規約
+    termsOfService: "https://sample.com/terms/"
+    # 問い合わせ先
+    contact:
+        name: "Support"
+        url: "https://github.com/87ko"
+        email: "87ko@example.com"
+    # SPDX定義を参考にすると良い
+    license:
+        name: "MIT License"
+        url: "https://opensource.org/licenses/MIT"
+# APIを提供するサーバーを定義する
+servers:
+    # 接続先を配列で定義する
+    - url: "https://api.sample.com/{version}"
+      description: "Production Environment" # 接続先urlに関する説明
+      variables: # 接続先URLで指定したテンプレート変数の内容を定義
+          version:
+              description: "API version"
+              enum: ["v1", "v2"]
+              default: "v2" #default値は必ず指定
+
+# APIを分類するタグ。path操作のタグで使用できる
+tags:
+    - name: "users"
+      description: "User operation"
+
+# 必須：API定義
+paths:
+    # Path
+    "/users/{userId}/message":
+        post:
+            # メタデータ
+            summary: "Send new message." #操作の説明
+            description: "Send new message." #操作の詳細説明
+            tags: ["users"] #タグの付与 ルートオブジェクトで定義したタグor任意タグ
+            deprecated: false #操作が廃止かどうか
+            # リクエストパラメーター
+            parameters:
+                - name: "userId" #パラメータ名
+                  in: "path" #定義される場所　query, header, path, cookie
+                  description: "User identifier"
+                  required: true #必須か否か default:false
+                  schema: { type: string } #パラメータ型定義
+                  example: "ge4yty" #サンプルデータ
+                - name: x-api-token
+                  in: "header"
+                  description: "Request User's identifier"
+                  schema: { type: string }
+                - name: token
+                  in: "cookie"
+                  description: "One time token"
+                  schema: { type:string }
+            # リクエストボディ
+            requestBody:
+                description: "Message body"
+                required: true
+                content:
+                    #メディアタイプを指定する
+                    application/json:
+                        # schema: { type:string }
+                        # example: "Hello World"
+                        schema:
+                            type: object #Objectの場合
+                            properties:
+                                date: { type: string, example: "2022-11-01" }
+                                comment: { type: string, example: "Hello" }
+            # レスポンス
+            responses:
+                #ステータスコードごとに定義
+                "200": #200番台は最低限入れておく
+                    # レスポンス説明
+                    description: "Success Operation"
+                    # レスポンスヘッダー
+                    headers:
+                        # ヘッダー種別ごとに記載する
+                        x-rate-limit-remaining:
+                            description: "number of remaining requests"
+                            schema: { type: integer }
+                    content:
+                        application/json:
+                            schema:
+                                #コンポーネントしてい
+                                $ref: "#/components/schemas/Book"
+                                # $ref: "{FILE_PATH}#/components/schemas/Book" #別ファイルも可能
+                "4XX": # XXで表現することも可能
+                    description: "Client side error"
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    code: { type: string }
+                                    type: { type: string }
+                                    message: { type: string }
+                                    errors:
+                                        type: array #Array表現
+                                        items:
+                                            type: object
+                                            properties:
+                                                field: { type: string }
+                                                code: { type: string }
+    "/samples":
+        get:
+            summary: "Get all sample data"
+            responses:
+                "200":
+                    description: "Success operation"
+            security:
+                # securityで指定した名称を指定
+                # scopeが必要な場合は必要なスコープ名を指定
+                - sample_jwt_auth: []
+
+# セキュリティ
+security:
+    # 全体で指定する場合はこっちで。
+    # 個別の方で、空配列を指定することで解除
+    - sample_jwt_auth: []
+
+# コンポーネント定義して再利用可能な状態にする
+components:
+    schemas:
+        Book:
+            type: object
+            properties:
+                title: { type: string }
+                author: { type: string }
+                publish: { type: string }
+    securitySchemes:
+        #利用するセキュリティスキーム
+        sample_basic:
+            description: "Sample authencation"
+            type: http # http, apiKey, oauth2, openIdConnect
+            scheme: basic #basic認証 あんまり使わない
+        sample_jwt_auth:
+            description: "JWT authencation"
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        sample_apikey_auth:
+            description: "API KEY authencation"
+            type: apiKey
+            in: header
+            name: X-Api-Key
+        sample_cookie_auth:
+            description: "Login session authencation"
+            type: apiKey
+            in: cookie
+            name: JSESSIONID
+        sample_oauth2_auth:
+            description: "OAuth2"
+            type: oauth2
+            flows:
+                authorizationCode:
+                    authorizationUrl: "https://oauth.sample.com/auth"
+                    tokenUrl: "https://oauth.sample.com/token"
+                    scopes:
+                        "create_review": "Post new review."
+        sample_oidc_auth:
+            description: "OAuth2"
+            type: openIdConnect
+            openIdConnectUrl: "https://oidc.sample.com/signin"
